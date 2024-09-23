@@ -1,0 +1,12 @@
+services:
+  terraform-vpn:
+    image: hashicorp/terraform:1.9.5
+    env_file:
+      - .env
+    volumes:
+      - ~/.secret:/root/.secret:ro
+      - ./terraform:/terraform
+    working_dir: /terraform
+    entrypoint: ash
+    tty: true
+    restart: always
