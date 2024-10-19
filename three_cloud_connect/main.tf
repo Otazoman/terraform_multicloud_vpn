@@ -70,3 +70,8 @@ module "vmcreate" {
   azurevm_setting_props       = var.azurevm_setting_props
   depends_on                  = [module.vpc_network, module.vpn_network]
 }
+
+output "tls_private_key" {
+  value     = module.vmcreate.tls_private_key
+  sensitive = true
+}
