@@ -69,11 +69,12 @@ resource "google_compute_vpn_tunnel" "gcp_aws_vpn_tunnels" {
   count                           = 4
   name                            = "${var.gcp_vpc_name}-aws-vpn-tunnel-${count.index + 1}"
   vpn_gateway                     = google_compute_ha_vpn_gateway.gcp_aws_ha_vpn.self_link
+  vpn_gateway_interface           = floor(count.index / 2)
   peer_external_gateway           = google_compute_external_vpn_gateway.aws_gateway.self_link
   peer_external_gateway_interface = count.index
   shared_secret                   = aws_vpn_connection.gcp_vpn_connection[floor(count.index / 2)]["tunnel${count.index % 2 + 1}_preshared_key"]
   router                          = google_compute_router.gcp_aws_router.name
-  vpn_gateway_interface           = floor(count.index / 2)
+  ike_version                     = var.ike_version
 }
 
 // BGPピアの設定（4つ）
@@ -81,14 +82,13 @@ resource "google_compute_router_interface" "gcp_aws_router_interface" {
   count      = 4
   name       = "gcp-aws-router-interface-${count.index + 1}"
   router     = google_compute_router.gcp_aws_router.name
-  ip_range   = aws_vpn_connection.gcp_vpn_connection[floor(count.index / 2)]["tunnel${count.index % 2 + 1}_inside_cidr"]
+  ip_range   = "${aws_vpn_connection.gcp_vpn_connection[floor(count.index / 2)]["tunnel${count.index % 2 + 1}_cgw_inside_address"]}/30"
   vpn_tunnel = google_compute_vpn_tunnel.gcp_aws_vpn_tunnels[count.index].name
 }
 resource "google_compute_router_peer" "gcp_aws_router_peer" {
   count                     = 4
   name                      = "gcp-aws-router-peer-${count.index + 1}"
   router                    = google_compute_router.gcp_aws_router.name
-  ip_address                = cidrhost("${aws_vpn_connection.gcp_vpn_connection[floor(count.index / 2)]["tunnel${count.index % 2 + 1}_vgw_inside_address"]}/30", 3)
   peer_ip_address           = aws_vpn_connection.gcp_vpn_connection[floor(count.index / 2)]["tunnel${count.index % 2 + 1}_vgw_inside_address"]
   peer_asn                  = aws_vpn_gateway.cmk_vgw.amazon_side_asn
   advertised_route_priority = 100
