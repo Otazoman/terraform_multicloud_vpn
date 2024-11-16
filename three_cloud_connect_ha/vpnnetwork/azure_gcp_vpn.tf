@@ -47,13 +47,13 @@ resource "google_compute_router_interface" "gcp_azure_interfaces" {
   count      = 2
   name       = "gcp-azure-interface-${count.index + 1}"
   router     = google_compute_router.gcp_azure_router.name
-  ip_range   = var.gcp_vpn_setting_props["gcp_gw_ip${count.index + 1}_cidr1"]
   vpn_tunnel = google_compute_vpn_tunnel.gcp_azure_vpn_tunnels[count.index].name
 }
 resource "google_compute_router_peer" "gcp_azure_peers" {
   count                     = 2
   name                      = "gcp-azure-peer-${count.index + 1}"
   router                    = google_compute_router.gcp_azure_router.name
+  ip_address                = cidrhost(var.gcp_vpn_setting_props["gcp_gw_ip${count.index + 1}_cidr1"], 1)
   peer_ip_address           = cidrhost(var.gcp_vpn_setting_props["gcp_gw_ip${count.index + 1}_cidr1"], 2)
   peer_asn                  = var.azure_vpn_props.azure_asn
   advertised_route_priority = 100
